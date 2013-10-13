@@ -8,7 +8,7 @@ import (
 	"log"
 	"net/http"
 
-	"bitbucket.org/juztin/wombat/config"
+	"bitbucket.org/juztin/config"
 )
 
 type Logger struct {
@@ -22,7 +22,7 @@ var (
 )
 
 func init() {
-	key, _ := config.GroupString("loggly", "key")
+	key := config.Required.GroupString("loggly", "key")
 	logger = New(key)
 }
 
