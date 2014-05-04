@@ -9,10 +9,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
-	"bitbucket.org/juztin/config"
+	"minty.io/config"
 )
 
 type Logger struct {
@@ -21,21 +20,16 @@ type Logger struct {
 }
 
 var (
-	url    = "https://logs.loggly.com/inputs/"
 	logger *Logger
 )
 
 func init() {
-	key := config.Required.GroupString("loggly", "key")
-	logger = New(key)
+	url := config.Required.GroupString("loggly", "url")
+	logger = New(url)
 }
 
-func New(key string) *Logger {
-	u := url
-	if key != "" {
-		u = u + key
-	}
-	return &Logger{u, &http.Client{}}
+func New(url string) *Logger {
+	return &Logger{url, &http.Client{}}
 }
 
 func (l *Logger) send(o interface{}) error {
@@ -48,21 +42,14 @@ func (l *Logger) send(o interface{}) error {
 		b = j
 	}
 
-	if l.url == "" {
-		log.Printf("Loggly:%v\n", string(b))
-		return nil
-	}
-
 	body := bytes.NewBuffer(b)
 	resp, err := l.client.Post(l.url, "application/json", body)
 	if err != nil {
-		log.Println("[ERROR] Loggly:", err)
-		return err
+		return fmt.Errorf("failed posting to Loggly: %s", err)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		log.Println("[ERROR] Loggly: Invalid status,", resp.StatusCode, ":", string(b))
-		return errors.New(fmt.Sprintf("Failed to log to Loggly, %d", resp.StatusCode))
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("invalid status from Loggly:", resp.StatusCode, ":", string(b))
 	}
 
 	return nil
@@ -77,10 +64,15 @@ func (l *Logger) Error(err error) error {
 }
 
 func Log(d interface{}) error {
+	if logger.url == "" {
+		return errors.New("loggly URL doesn't exist in 'config.json'")
+	}
 	return logger.send(d)
 }
 
 func Error(err error) error {
+	if logger.url == "" {
+		return errors.New("loggly URL doesn't exist in 'config.json'")
+	}
 	return logger.send(err.Error())
 }
-
