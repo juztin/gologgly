@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"minty.io/config"
+	"code.minty.io/config"
 )
 
 type Logger struct {
