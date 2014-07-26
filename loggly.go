@@ -24,7 +24,7 @@ var (
 )
 
 func init() {
-	url := config.Required.GroupString("loggly", "url")
+	url := config.RequiredGroupString("loggly", "url")
 	logger = New(url)
 }
 
